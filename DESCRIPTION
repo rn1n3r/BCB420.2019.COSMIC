@@ -1,0 +1,17 @@
+Package: BCB420.2019.STRING
+Type: Package
+Title: STRING data annotatation of human genes
+Version: 0.1.0
+Date: 2019-01-22
+Authors@R: c(
+    person("Boris", "Steipe", email = "boris.steipe@utoronto.ca", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1134-6758"))
+    )
+Description: Describes the workflow for annotating human genes with
+             high-confidence STRING data and contains an annotated example
+             data set of genes in the phagosyme-lysosome fusion system.
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Suggests:
+    testthat
+RoxygenNote: 6.1.1
