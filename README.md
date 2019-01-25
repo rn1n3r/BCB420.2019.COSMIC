@@ -567,7 +567,7 @@ abline(v = 900, lwd = 0.5)
 
 ```
 
-![](inst/img/score_hist_2.svg?raw=true "STRING score distribution (detail)")
+![](./inst/img/score_hist_2.svg?sanitize=true "STRING score distribution (detail)")
 
 
 ```R
@@ -677,7 +677,7 @@ rug(deg, col = "#EE5544")
 
 ```
 
-![](inst/img/STRING_degrees_1.svg?raw=true "STRING network degree distribution")
+![](./inst/img/STRING_degrees_1.svg?sanitize=true "STRING network degree distribution")
 
 
 ## 6 Biological validation: network properties
@@ -713,7 +713,7 @@ abline(ab, col = "#FF000077", lwd = 0.7)
 
 ```
 
-![](inst/img/STRING_Zipf_plot_1.svg?raw=true "STRING score distribution (detail)")
+![](./inst/img/STRING_Zipf_plot_1.svg?sanitize=true "STRING score distribution (detail)")
 
 
 ```R
@@ -849,7 +849,7 @@ abline(ab, col = "#FF000077", lwd = 0.7)
 
 ```
 
-![](inst/img/xGenes_Zipf_plot_1.svg?raw=true "xGenes degree distribution (log(#)/log(f))")
+![](./inst/img/xGenes_Zipf_plot_1.svg?sanitize=true "xGenes degree distribution (log(#)/log(f))")
 
 
 ```R
@@ -890,7 +890,7 @@ par(oPar)
 
 ```
 
-![](inst/img/xGenes_Network_1.svg?raw=true "xGenes functional interaction network")
+![](./inst/img/xGenes_Network_1.svg?sanitize=true "xGenes functional interaction network")
 
 
 &nbsp;
@@ -912,6 +912,8 @@ Example code for biomaRt was taken taken from `BIN-PPI-Analysis.R` and example c
 # 9 Acknowledgements
 
 Thanks to Simon Kågedal's very useful [PubMed to APA reference tool](http://helgo.net/simon/pubmed/).
+
+User `Potherca` [posted on Stack](https://stackoverflow.com/questions/13808020/include-an-svg-hosted-on-github-in-markdown) how to use the parameter `?sanitize=true` to display `.svg` images in github markdown.
 
 &nbsp;
 
