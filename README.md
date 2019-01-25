@@ -16,6 +16,10 @@
 
 This package describes the workflow to download functional network data from [the STRING database](https://string-db.org), how to map the IDs to [HGNC](https://www.genenames.org/) symbols, how to annotate the example gene set, and provides examples of computing database statistics.
 
+The package serves dual duty, as an RStudio project, as well as an R package that can be installed. Package checks **pass without errors, warnings, or notes**.
+
+&nbsp;
+
 #### In this project ...
 
 ```text
@@ -909,7 +913,7 @@ Example code for biomaRt was taken taken from `BIN-PPI-Analysis.R` and example c
 
 &nbsp;
 
-# 9 Acknowledgements
+## 9 Acknowledgements
 
 Thanks to Simon Kågedal's very useful [PubMed to APA reference tool](http://helgo.net/simon/pubmed/).
 
