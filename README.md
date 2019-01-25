@@ -545,7 +545,7 @@ abline(v = 900, lwd = 0.5)
 
 ```
 
-![](inst/img/score_hist_1.svg?raw=true "STRING score distribution")
+![](./inst/img/score_hist_1.svg?raw=true "STRING score distribution")
 
 We know that "channel 7 - databases" interactions are arbitrarily scored as _p_ = 0.9. This is clearly reflected in the scores distribution.
 
