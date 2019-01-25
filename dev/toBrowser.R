@@ -30,14 +30,14 @@ if (! requireNamespace("rmarkdown", quietly=TRUE)) {
 
 # ====  FUNCTIONS  =============================================================
 
-toBrowser <- function(FN) {
+toBrowser <- function(FN = "README.md") {
   # Purpose:
   #     Render a markdown file to html in tempdir() and display it in the
   #     user's default browser.
   # Parameters:
-  #     FN:     char   filename of a markdown file
+  #     FN:     char   filename of a markdown file. Defaults to README.md
   # Value:
-  #     result: NULL (invisble). The function is used for its side-effect
+  #     result: NULL (invisible). The function is used for its side-effect
   #             of opening an html file.
 
   html <- file.path(tempdir(), "tmp.html")
@@ -50,7 +50,7 @@ toBrowser <- function(FN) {
 # ====  TESTS  =================================================================
 if (FALSE) {
 
-  toBrowser("README.md")  # Executing this line should open the file
+  toBrowser()  # Executing this line should render and open the file
 
 }
 
