@@ -1,24 +1,19 @@
-# `BCB420.2019.STRING`
+# `BCB420.2019.COSMIC`
 
-#### (STRING data annotatation of human genes)
+#### (COSMIC data annotation of human genes)
 
-&nbsp;
-
-###### [Boris Steipe](https://orcid.org/0000-0002-1134-6758), Department of Biochemistry and Department of Molecular Genetics, University of Toronto, Canada. &lt;boris.steipe@utoronto.ca&gt;
+###### Edward Ho &lt;emc.ho@mail.utoronto.ca&gt;
 
 ----
 
-**If any of this information is ambiguous, inaccurate, outdated, or incomplete, please check the [most recent version](https://github.com/hyginn/BCB420.2019.STRING) of the package on GitHub and if the problem has not already been addressed, please [file an issue](https://github.com/hyginn/BCB420.2019.STRING/issues).**
+****
 
 ----
 
 ## 1 About this package:
 
-This package describes the workflow to download functional network data from [the STRING database](https://string-db.org), how to map the IDs to [HGNC](https://www.genenames.org/) symbols, how to annotate the example gene set, and provides examples of computing database statistics.
+This package describes the pipeline to download cancer somatic mutation from the [COSMIC database](https://cancer.sanger.ac.uk/cosmic), how to ensure the mutation entries have a proper HGNC symbol (where applicable), and calculation of basic statistics. This package will also provide an annotation of the example gene set (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)), which is based on the phagosome/lysosome fusion system as reviewed by [Corona & Jackson (2018)](https://www.sciencedirect.com/science/article/pii/S0962892418301223).
 
-The package serves dual duty, as an RStudio project, as well as an R package that can be installed. Package checks **pass without errors, warnings, or notes**.
-
-&nbsp;
 
 #### In this project ...
 
@@ -51,14 +46,14 @@ The package serves dual duty, as an RStudio project, as well as an R package tha
 
 ----
 
-## 2 STRING Data
+## 2 COSMIC Data
 
-STRING is a database of functional interactions. STRING interactions are inferred from a variety of different experimental and computational categories, scored with a confidence score and made available as network edges where the nodes are ENSEMBL protein IDs. All STRING data is available under a CC-BY 4.0 license.
+COSMIC (Catalogue Of Somatic Mutations in Cancer) is an expert-curated collection of data describing somatic gene mutations found in human cancer. It presents phenotypic data (primary site and histology) associated with the gene mutations that is collected from the literature by experts from the literature, and also utilizes data from the Cancer Gene Census.
 
-This document describes work with [STRING version 11 (preview) (2019-01-11)](https://string-db.org/cgi/access.pl?footer_active_subpage=archive) [(Szclarczyk _et al._ 2019)](https://academic.oup.com/nar/article/47/D1/D607/5198476).
+All COSMIC data is free for academic users, and requires an email address from an academic institution to register and download data. More information can be found [here](https://cancer.sanger.ac.uk/cosmic/license+&cd=1&hl=en&ct=clnk&gl=ca).
 
 
-&nbsp;
+&nbsp;https://academic.oup.com/nar/article/47/D1/D941/5146192
 
 #### 2.1 Data semantics
 
@@ -84,39 +79,57 @@ This approach integrates biological data on the largest possible scale, and this
 
 ## 3 Data download and cleanup
 
-To download the source data from STRING ... :
+To download the source data from COSMIC ... :
 
-1. Navigate to the [**STRING** database](https://string-db.org) and follow the link to the [download section](https://string-db.org/cgi/download.pl).
-2. Choose "Homo sapiens" as organism.
-3. Download the following data file: (Warning: large).
+1. Register on the [**COSMIC** website](
+    https://cancer.sanger.ac.uk/cosmic/register), log in and navigate to to the [download section](https://cancer.sanger.ac.uk/cosmic/download).
+2. Download the COSMIC Mutation Data (`CosmicMutantExport.tsv.gz`).
+3. Uncompress the file and place it in <code>../data</code> (sister directory of working directory). <code>CosmicMutantExport.tsv</code> is **1.7 Gb**.
 
-* `9606.protein.links.v11.0.txt.gz` (71.2 Mb)	protein network data (scored links between proteins);
+Additionally, we require data from the HGNC (HUGO Gene Nomenclature Committee) to map the HGNC IDs provided by COSMIC to the approved symbol, and also to validate that gene names are valid symbols.
 
-4. Uncompress the file and place it into a sister directory of your working directory which is called `data`. (It should be reachable with `file.path("..", "data")`). **Warning:**  `../data/9606.protein.links.v11.0.txt` is 541 Mb.
+1. Navigate to https://www.genenames.org/download/custom/
+2. Keep the default settings and click Submit.
+3. Save the text file as <code>hgnc.tsv</code> in the same <code>../data</code> directory as above.
 
 &nbsp;
 
-## 4 Mapping ENSEMBL IDs to HGNC symbols
+## 4 Mapping to HGNC symbols
 
-STRING network nodes are Ensembl protein IDs. These can usually be mapped to HGNC symbols, but there might be ambiguities e.g. because alternatively spliced proteins might have different ENSP IDs that  map to the same HGNC symbol, or HGNC symbols have changed (they are frequently updated). To provide the best possible interpretation, we need to build a map of ENSP IDs to HGNC symbols. This requires care, because it is not guaranteed that all ENSP IDs can be mapped uniquely.** However, the usability of the dataset for annotation depends on the quality of this mapping.**
+COSMIC data includes the gene name for each observed mutation sample, and this name should be the associated HGNC symbol in most cases. Additionally, the tabulated data has a column for the HGNC ID, allowing the exact symbol to be found in the HGNC database. To ensure that the symbols are accurate, a map of the HGNC ID to the associated will be constructed for the unique HGNC IDs in the COSMIC database.
+
+Some entries have multiple HGNC associated with them. For now, the HGNC symbol that corresponds with the entry's gene name will be used.
+
+Furthermore, there are some cases where there is no HGNC ID, so the provided gene name will be used after validating that it is a valid HGNC symbol. Lastly, there are some gene names that are provided in other formats, such as Ensembl gene ID. These will be mapped (where possible) to the HGNC symbol using the biomaRt package.
 
 &nbsp;
 
 #### Preparations: packages, functions, files
 
-To begin, we need to make sure the required packages are installed:
+**Required packages:**
 
-**`readr`** provides functions to read data which are particularly suitable for
-large datasets. They are much faster than the built-in read.csv() etc. But caution: these functions return "tibbles", not data frames. ([Know the difference](https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html).)
+**`readr`** to quickly read in the .tsv files provided by COSMIC.
+
 ```R
 if (! requireNamespace("readr")) {
   install.packages("readr")
 }
 ```
 
+
+
+**`data.table`** to make subsetting tables by key [fast](https://cran.r-project.org/web/packages/data.table/vignettes/datatable). This is important as the COSMIC data is quite large (6,581,004 rows).
+
+```R
+if (! requireNamespace("data.table")) {
+  install.packages("data.table")
+}
+```
+
+
+
 **`biomaRt`** biomaRt is a Bioconductor package that implements the RESTful API of biomart,
 the annotation framwork for model organism genomes at the EBI. It is a Bioconductor package, and as such it needs to be loaded via the **`BiocManager`**,
-&nbsp;
 
 ```R
 if (! requireNamespace("BiocManager", quietly = TRUE)) {
@@ -127,353 +140,183 @@ if (! requireNamespace("biomaRt", quietly = TRUE)) {
 }
 ```
 
-**`igraph`** is THE go-to package for everything graph related. We use it here to
-compute some statistics on the STRING- and example graphs and plot.
+
+
 &nbsp;
 
+#### 4.1 Loading the data into R
+
 ```R
-if (! requireNamespace("igraph")) {
-  install.packages("igraph")
-}
+# Load the HGNC data
+hgnc <- readr::read_tsv(file.path("../data", "HGNC_data_all.tsv"), col_names=TRUE)
+
+# Load the COSMIC data with defined columned types:
+col_spec <- cols(
+  `Gene name` = col_character(),
+  `Accession Number` = col_character(),
+  `Gene CDS length` = col_integer(),
+  `HGNC ID` = col_character(), # This requires col_character because the "/" is used
+  `Sample name` = col_character(),
+  ID_sample = col_integer(),
+  ID_tumour = col_integer(),
+  `Primary site` = col_character(),
+  `Site subtype 1` = col_character(),
+  `Site subtype 2` = col_character(),
+  `Site subtype 3` = col_character(),
+  `Primary histology` = col_character(),
+  `Histology subtype 1` = col_character(),
+  `Histology subtype 2` = col_character(),
+  `Histology subtype 3` = col_character(),
+  `Genome-wide screen` = col_character(),
+  `Mutation ID` = col_character(),
+  `Mutation CDS` = col_character(),
+  `Mutation AA` = col_character(),
+  `Mutation Description` = col_character(),
+  `Mutation zygosity` = col_character(),
+  LOH = col_character(),
+  GRCh = col_integer(),
+  `Mutation genome position` = col_character(),
+  `Mutation strand` = col_character(),
+  SNP = col_character(),
+  `Resistance Mutation` = col_character(),
+  `FATHMM prediction` = col_character(),
+  `FATHMM score` = col_double(),
+  `Mutation somatic status` = col_character(),
+  Pubmed_PMID = col_integer(),
+  ID_STUDY = col_integer(),
+  `Sample Type` = col_character(),
+  `Tumour origin` = col_character(),
+  Age = col_double() # Needed to use col_double as certain entries had decimal values
+)
+
+# Load data
+cosmicData <- readr::read_tsv(file.path("../data", "CosmicMutantExport.tsv"), col_names = TRUE, col_types = col_spec)
+
+# Data preview
+head(cosmicData)
+# A tibble: 6 x 36
+#  `Gene name` `Accession Numb~ `Gene CDS lengt~ `HGNC ID` `Sample name` ID_sample ID_tumour `Primary site`
+#  <chr>       <chr>                       <int> <chr>     <chr>             <int>     <int> <chr>         
+#1 GRK6        ENST00000355472              1731 4545      PD1403a          898155    815769 stomach       
+#2 TMEM108     ENST00000321871              1728 28451     TCGA-13-0760~   1474815   #1398514 ovary         
+#3 HRH1        ENST00000397056              1464 5182      TCGA-13-0900~   1474861   #1398560 ovary         
+#4 SLC26A8     ENST00000355574              2913 14468     TCGA-13-1509~   1474839   #1398538 ovary         
+#5 OR51E1      ENST00000396952               957 15194     GC1_T           1645677   #1560711 stomach       
+#6 CMYA5       ENST00000238522             11259 NA        TCGA-AG-3892~   1651564   #1566351 large_intesti~
+# ... with 28 more variables: `Site subtype 1` <chr>, `Site subtype 2` <chr>, `Site subtype 3` <chr>,
 ```
 
 &nbsp;
 
-Next we source a utility function that we will use later, for mapping
-ENSP IDs to gene symbols if the mapping can not be achieved directly.
+#### 4.2  Mapping the HGNC ID to HGNC symbol
+
+Many of the entries in the COSMIC database already have an HGNC ID associated with it. In this case, we use this value and look up the corresponding symbol in the imported HGNC data.
+
+###### 4.2.1 Cleaning the ID entries
+
+
+As noted earlier, sometimes the mutation corresponds to two genes. In this case, we will use the first ID, which usually corresponds with the given gene name. Additionally, we add the HGNC prefix ("HGNC:") to the IDs so that they match the imported data.
+
+```R
+uHGNCID <- unique(cosmicData$`HGNC ID`)
+
+# Take the first ID if a / is found
+uHGNCID <- sapply(strsplit(uHGNCID, "/"), head, 1)
+uHGNCID <- unique(cosmicData$`HGNC ID`)
+uHGNCIDPrefix <- paste("HGNC:", uHGNCID, sep="") 
+
+```
+
+
+###### 4.2.2 Mapping the ID to the symbol
+
+Using the unique HGNC IDs found in the COSMIC data, we create a data.table (<code>id2sym</code>) with the ID and the approved symbol using the <code>hgnc</code> table imported earlier. The data.table will use the HGNC ID as a key, and this allows for fast lookup through [binary search](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html). Then, using this data.table, a new column <code>HGNCsym</code> is added to the <code>cosmicData</code> table which stores the approved symbol. 
+
+```R
+# Create id2sym that maps HGNC ID to HGNC Symbol
+# Use data.table in order to utilize key search to speed up computation
+index <- match(uHGNCIDPrefix, hgnc$`HGNC ID`)
+id2sym <- data.table::data.table(`HGNC ID` = uHGNCID, `Gene name` = hgnc$`Approved symbol`[index])
+data.table::setkey(id2sym, `HGNC ID`)
+
+# Use id2sym to map the ID to the symbol
+# allow.cartesian=TRUE to allow for duplicate IDs
+cosmicData$HGNCsym <- id2sym[cosmicData$`HGNC ID`, allow.cartesian=TRUE]$`Gene name`
+
+# See what our current coverage is for symbol mapping
+sum(!is.na(cosmicData$HGNCsym)) / length(cosmicData$HGNCsym) # 0.8840686
+```
+
+So currently 88% of the dataset has an associated HGNC symbol. Not bad, but let's see if we can improve that. A quick observation was that some entries which had <code>NA</code> for its HGNC ID had gene names that resembled HGNC approved symbols. 
+
+```R
+head(cosmicData$`Gene name`[is.na(cosmicData$`HGNC ID`)])
+#[1] "CMYA5"                    "CMYA5"                    "RNFT1_ENST00000305783"   
+#[4] "C12orf41_ENST00000420613" "TFE3_ENST00000336239"     "TIAM1_ENST00000286827"   
+# CMYA5 is a HGNC symbol, as is TFE3
+```
+
+
+
+###### 4.2.3 Using the gene name as the symbol where appropriate
+
+To do this, first we collect the gene names of the entries with missing symbols (<code>missingNames</code>). From above, we can see that some gene names are HGNC symbols, and some of them also have an Ensemble transcript ID attached to it. We first strip the transcript IDs, and then check to see if the name matches the symbols in the HGNC data we imported. Then, we use the indices of the matches to add onto the <code>HGNCsym</code> column of the COSMIC data.
+
+```R
+
+# Now, need to deal with the entries with HGNC ID = NA
+# Check if the provided gene name is found in the HGNC symbol list
+missingNames <- cosmicData$`Gene name`[is.na(cosmicData$HGNCsym)]
+
+# Let's also get rid of the _ENSTs
+missingNames <- sapply(strsplit(missingNames, "_ENST"), head, 1)
+hgncIndex <- match(missingNames, hgnc$`Approved symbol`)
+
+# Add matches to the symbol column
+cosmicData$HGNCsym[is.na(cosmicData$HGNCsym)] <- hgnc$`Approved symbol`[hgncIndex]
+
+# Check updated coverage
+sum(!is.na(cosmicData$HGNCsym)) / length(cosmicData$HGNCsym) # 0.9821093
+sum(is.na(cosmicData$HGNCsym)) # 117739
+
+# What do the missing genes look like?
+head(cosmicData$`Gene name`[is.na(cosmicData$HGNCsym)])
+
+#[1] "C12orf41_ENST00000420613" "AC093393.1"               "PCNXL3_ENST00000355703"  
+#[4] "ENSG00000167390"          "LOC652153"                "LRRC16A"     
+```
+&nbsp;
+
+###### 4.2.4 Using biomaRt to map Ensembl gene IDs to HGNC symbols
 
 &nbsp;
 
 ```R
+# Update names with missing symbols (could not directly use name as symbol)
+missingNames <- missingNames[is.na(hgncIndex)]
 
-source("inst/scripts/recoverIDs.R")
+# Let's see if we can find any using the Ensembl gene ID
+ensgIndex <- grepl("ENSG", missingNames)
+ensembl <- missingNames[ensgIndex]
+
+# Make a biomaRt and filter for the Ensemble gene ID
+myMart <- biomaRt::useMart("ensembl", dataset="hsapiens_gene_ensembl")
+ensemblMap <- biomaRt::getBM(filters="ensembl_gene_id", attributes = c("ensembl_gene_id", "hgnc_symbol"), values = unique(ensembl), mart=myMart)
+
+# Use a data.table for fast lookup using keys
+ensemblMap <- data.table::as.data.table(ensemblMap)
+data.table::setkey(ensemblMap, "ensembl_gene_id")
+
+# Remove empty matches
+ensemblMap <- ensemblMap[hgnc_symbol != ""]
+
+# Verify that the returned symbols are HGNC approved symbols
+sum(!(ensemblMap$hgnc_symbol %in% hgnc$`Approved symbol`)) # 0
+
 
 ```
 
-&nbsp;
 
-Finally we fetch the HGNC reference data from GitHub. The `recoverIDs()` function requires the `HGNC` object to be available in the global namespace. (Nb. This shows how to load `.RData` files directly from a GitHub repository!)
-
-&nbsp;
-
-```R
-myURL <- paste0("https://github.com/hyginn/",
-                "BCB420-2019-resources/blob/master/HGNC.RData?raw=true")
-load(url(myURL))  # loads HGNC data frame
-
-```
-&nbsp;
-
-#### 4.1 Step one: which IDs do we have to map?
-
-&nbsp;
-
-```R
-  # Read the interaction graph data: this is a weighted graph defined as an
-  # edge list with gene a, gene b, confidence score (0, 999).
-
-  tmp <- readr::read_delim(file.path("../data", "9606.protein.links.v11.0.txt"),
-                           delim = " ",
-                           skip = 1,
-                           col_names = c("a", "b", "score"))  # 11,759,454 rows
-
-  # what does this set look like?
-  head(tmp)
-  #    A tibble: 6 x 3
-  #     a                    b                    score
-  #     <chr>                <chr>                <dbl>
-  #   1 9606.ENSP00000000233 9606.ENSP00000272298   490
-  #   2 9606.ENSP00000000233 9606.ENSP00000253401   198
-  #   3 9606.ENSP00000000233 9606.ENSP00000401445   159
-  #   4 9606.ENSP00000000233 9606.ENSP00000418915   606
-  #   5 9606.ENSP00000000233 9606.ENSP00000327801   167
-  #   6 9606.ENSP00000000233 9606.ENSP00000466298   267
-
-  # Columns a and b are Ensembl protein IDs, column "score" is the probability
-  # of an edge representing a real functional interaction, times 1,000 rounded
-  # to integer. Each of these IDs needs to be mapped to its corresponding
-  # HGNC symbol.
-
-  # Do all elements have the right tax id?
-  all(grepl("^9606\\.", tmp$a))  # TRUE
-  all(grepl("^9606\\.", tmp$b))  # TRUE
-  # remove "9606." prefix
-  tmp$a <- gsub("^9606\\.", "", tmp$a)
-  tmp$b <- gsub("^9606\\.", "", tmp$b)
-
-  # how many unique IDs do we have to map?
-  uENSP <- unique(c(tmp$a, tmp$b))  # 19,354 IDs need to be mapped
-
-```
-
-&nbsp;
-
-#### 4.2  Step two: mapping via biomaRt
-
-To proceed with the mapping, we use biomaRt to fetch as many HGNC symbols as we can - first in bulk (mapping ENSP IDs to HGNC symbols), then individually for the remaining IDs we could not map, via UniProt IDs, RefSeq IDs or UCSC IDs. We also load the HGNC reference data to validate our results.
-
-&nbsp;
-
-###### 4.2.1  Constructing an ID-mapping tool
-
-
-But what does an ID mapping tool look like anyway? It is a named vector, in which the elements are the IDs we need to map to, and the names are the IDs we are mapping from. Consider the following example:
-
-```R
-up2low <- letters
-names(up2low) <- LETTERS
-up2low[24] <- NA  # replaxe "x" with NA
-x <- c("A", "G", "1234", "c", "T", "X")
-up2low[x]
-#  A    G   <NA> <NA>  T    X
-# "a"  "g"   NA   NA  "t"   NA
-
-```
-Note:
-
-1. Every element (ID) whose name appears in the `names()` gets replaced by the element (ID) in the vector itself (A -> a, G -> G, T -> t);
-2. If the element **does not** appear in the `names()`, (e.g. "1234", "c") it gets replaced by `NA`.
-3. Some IDs can not get mapped - like "X" in the example, these *could* be missing, but for bookkeeping purposes and for efficiency it is better to have them present and map them to `NA`.
-
-Therefore: a good ID mapping tool contains as many mappings as possible for the target set, and every ID of the source set should be present and unique. Incidentally, uniqueness is structurally enforced: in R, names, rownames and colnames have to be unique in the first place.
-
-&nbsp;
-
-```R
-
-  # Map ENSP to HGNC symbols: open a "Mart" object ..
-  myMart <- biomaRt::useMart("ensembl", dataset="hsapiens_gene_ensembl")
-
-  tmp <- biomaRt::getBM(filters = "ensembl_peptide_id",
-                             attributes = c("ensembl_peptide_id",
-                                            "hgnc_symbol"),
-                             values = uENSP,
-                             mart = myMart)
-
-  head(tmp)
-  #       ensembl_peptide_id   hgnc_symbol
-  #   1      ENSP00000216487          RIN3
-  #   2      ENSP00000075120        SLC2A3
-  #   3      ENSP00000209884        KLHL20
-  #   4      ENSP00000046087          ZPBP
-  #   5      ENSP00000205214         AASDH
-  #   6      ENSP00000167106         VASH1
-
-  nrow(tmp)  # 19,109  symbols have been retrieved for the 19,354 ENSP IDs.
-  
-```
-&nbsp;
-
-There are three possible problems with the data that biomart returns:
-
-&nbsp;
-
-**(1)** There might be more than one value returned. The ID appears more than
-once in `tmp$ensembl_peptide_id`, with different mapped symbols.
-
-```R
-  sum(duplicated(tmp$ensembl_peptide_id))  # Indeed: three duplicates!
-```
-
-&nbsp;
-
-**(2)** There might be nothing returned for one ENSP ID. We have the ID in `uENSP`, but it does not appear in `tmp$ensembl_peptide_id`:
-
-```R
-
-  sum(! (uENSP) %in% tmp$ensembl_peptide_id)  # 248
-```
-&nbsp;
-
-**(3)** There might be no value returned: `NA`, or `""`. The ID appears in `tmp$ensembl_peptide_id`, but there is no symbol in `tmp$hgnc_symbol`.
-
-```R
-  sum(is.na(ensp2sym$sym))  # 0
-  sum(ensp2sym$sym == "")   # 199 - note: empty strings for absent symbols.
-```
-
-&nbsp;
-
-Let's fix the "duplicates" problem first. We can't have duplicates: if we encounter an ENSP ID, we need exactly one symbol assigned to it. What are these genes?
-
-&nbsp;
-
-```R
-
-  dupEnsp <- tmp$ensembl_peptide_id[duplicated(tmp$ensembl_peptide_id)]
-  tmp[tmp$ensembl_peptide_id %in% dupEnsp, ]
-
-  #                  ensp      sym
-  # 8668  ENSP00000344961  PLEKHG7
-  # 8669  ENSP00000344961 C12orf74
-  # 14086 ENSP00000380933  PLEKHG7
-  # 14087 ENSP00000380933 C12orf74
-  # 18419 ENSP00000480558   CCL3L3
-  # 18420 ENSP00000480558   CCL3L1
-
-  # ENSP00000380933 and ENSP00000344961 should both map to PLEKHG7
-  # CCL3L3 and CCL3L3 both have UniProt ID P16619, we map ENSP00000480558
-  # (arbitrarily) to CCL3L1
-
-  # validate target rows
-  tmp[tmp$hgnc_symbol %in% c("C12orf74", "CCL3L3"), ]
-
-  # remove target rows
-  tmp <- tmp[ ! (tmp$hgnc_symbol %in% c("C12orf74", "CCL3L3")), ]
-
-  # check result
-  any(duplicated(tmp$ensembl_peptide_id))   # now FALSE
-```
-
-&nbsp;
-
-After this preliminary cleanup, defining the mapping tool is simple:
-
-&nbsp;
-
-```R
-  ensp2sym <- tmp$hgnc_symbol
-  names(ensp2sym) <- tmp$ensembl_peptide_id
-  
-  head(ensp2sym)
-  # ENSP00000216487 ENSP00000075120 ENSP00000209884  
-  #        "RIN3"        "SLC2A3"        "KLHL20"   
-  #        
-  # ENSP00000046087 ENSP00000205214 ENSP00000167106
-  #      "ZPBP"         "AASDH"         "VASH1"
-
-```
-
-&nbsp;
-
-###### 4.2.2  Cleanup and validation of `ensp2sym`
-
-There are two types of IDs we need to process further: (1), those that were not returned at all from biomaRt, (2) those for which only an empty string was returned.
-
-First, we add the symbols that were not returned by biomaRt to the map. They are present in uENSP, but not in ensp2sym$ensp:
-
-&nbsp;
-
-```R
-  sel <- ! (uENSP %in% names(ensp2sym))
-  x <- rep(NA, sum( sel))
-  names(x) <- uENSP[ sel ]
-
-  # confirm uniqueness
-  any(duplicated(c(names(x), names(ensp2sym))))  # FALSE
-
-  # concatenate the two vectors
-  ensp2sym <- c(ensp2sym, x)
-
-  # confirm
-  all(uENSP %in% names(ensp2sym))  # TRUE
-```
-
-&nbsp;
-
-Next, we set the symbols for which only an empty string was returned to `NA`:
-
-&nbsp;
-
-```R
-  sel <- which(ensp2sym == "") # 199 elements
-  ensp2sym[head(sel)] # before ...
-  ensp2sym[sel] <- NA
-  ensp2sym[head(sel)] # ... after
-
-  # Do we still have all ENSP IDs accounted for?
-  all( uENSP %in% names(ensp2sym))  # TRUE
-
-```
-
-&nbsp;
-
-###### 4.2.3  Additional symbols
-
-A function for using biomaRt for more detailed mapping is in the file `inst/scripts/recoverIds.R`. We have loaded it previously, and use it on all elements of `ensp2sym` that are `NA`.
-
-&nbsp;
-
-```R
-
-  # How many NAs are there in "ensp2sym" column?
-  sum(is.na(ensp2sym))   # 447
-
-  # subset the ENSP IDs
-  unmappedENSP <- names(ensp2sym)[is.na(ensp2sym)]
-
-  # use our function recoverIDs() to try and map the unmapped ensp IDs
-  # to symboils via other cross-references
-  recoveredENSP <- recoverIDs(unmappedENSP)
-
-  # how many did we find
-  nrow(recoveredENSP)  # 11. Not much, but it's honest work.
-
-  # add the recovered symbols to ensp2sym
-  ensp2sym[recoveredENSP$ensp] <- recoveredENSP$sym
-
-  # validate:
-  sum(is.na(ensp2sym))  # 436 - 11 less than 447
-
-```
-
-&nbsp;
-
-#### 4.4  Step four: outdated symbols
-
-We now have each unique ENSP IDs represented once in our mapping table. But are these the correct symbols? Or did biomaRt return obsolete names for some? We need to compare the symbols to our reference data and try to fix any problems. Symbols that do not appear in the reference table will also be set to NA.
-
-&nbsp;
-
-```R
-  # are all symbols present in the reference table?
-  sel <- ( ! (ensp2sym %in% HGNC$sym)) & ( ! (is.na(ensp2sym)))
-  length(        ensp2sym[ sel ] )  # 137 unknown
-  length( unique(ensp2sym[ sel ]))  # they are all unique
-
-  # put these symbols in a new dataframe
-  unkSym <- data.frame(unk = ensp2sym[ sel ],
-                       new = NA,
-                       stringsAsFactors = FALSE)
-
-  # Inspect:
-  # several of these are formatted like "TNFSF12-TNFSF13" or "TMED7-TICAM2".
-  # This looks like biomaRt concatenated symbol names.
-  grep("TNFSF12", HGNC$sym) # 23984: TNFSF12
-  grep("TNFSF13", HGNC$sym) # 23985 23986: TNFSF13 and TNFSF13B
-  grep("TMED7",   HGNC$sym) # 23630: TMED7
-  grep("TICAM2",  HGNC$sym) # 23494: TICAM2
-
-  # It's not clear why this happened. We will take a conservative approach
-  # and not make assumptions which of the two symbols is the correct one,
-  # i.e. we will leave these symbols as NA
-
-
-  # grep() for the presence of the symbols in either HGNC$prev or
-  # HGNC$synonym. If either is found, that symbol replaces NA in unkSym$new
-  for (i in seq_len(nrow(unkSym))) {
-    iPrev <- grep(unkSym$unk[i], HGNC$prev)[1] # take No. 1 if there are several
-    if (length(iPrev) == 1) {
-      unkSym$new[i] <- HGNC$sym[iPrev]
-    } else {
-      iSynonym <- which(grep(unkSym$unk[i], HGNC$synonym))[1]
-      if (length(iSynonym) == 1) {
-        unkSym$new[i] <- HGNC$sym[iSynonym]
-      }
-    }
-  }
-
-  # How many did we find?
-  sum(! is.na(unkSym$new))  # 32
-
-  # We add the contents of unkSym$new back into ensp2sym. This way, the
-  # newly mapped symbols are updated, and the old symbols that did not
-  # map are set to NA.
-
-  ensp2sym[rownames(unkSym)] <- unkSym$new
-
-
-```
 
 #### 4.5 Final validation
 
@@ -481,446 +324,10 @@ Validation and statistics of our mapping tool:
 
 ```R
 
-# do we now have all ENSP IDs mapped?
-all(uENSP %in% names(ensp2sym))  # TRUE
-
-# how many symbols did we find?
-sum(! is.na(ensp2sym))  # 18845
-
-# (in %)
-sum(! is.na(ensp2sym)) * 100 / length(ensp2sym)  # 96.0 %
-
-# are all symbols current in our reference table?
-all(ensp2sym[! is.na(ensp2sym)] %in% HGNC$sym)  # TRUE
-
-# Done.
-# This concludes construction of our mapping tool.
-# Save the map:
-
-save(ensp2sym, file = file.path("inst", "extdata", "ensp2sym.RData"))
-
-# From an RStudio project, the file can be loaded with
-load(file = file.path("inst", "extdata", "ensp2sym.RData"))
 
 
 ```
 
 &nbsp;
 
-# 5 Annotating gene sets with STRING Data
 
-Given our mapping tool, we can now annotate gene sets with STRING data. As a first example, we analyze the entire STRING graph. Next, we use high-confidence edges to analyze the network of our example gene set.
-
-
-&nbsp;
-
-```R
-
-# Read the interaction graph data: this is a weighted graph defined as an
-# edge list with gene a, gene b, confidence score (0, 999).
-
-tmp <- readr::read_delim(file.path("../data", "9606.protein.links.v11.0.txt"),
-                         delim = " ",
-                         skip = 1,
-                         col_names = c("a", "b", "score"))  # 11,759,454 rows
-
-# do they all have the right tax id?
-all(grepl("^9606\\.", tmp$a))  # TRUE
-all(grepl("^9606\\.", tmp$b))  # TRUE
-# remove "9606." prefix
-tmp$a <- gsub("^9606\\.", "", tmp$a)
-tmp$b <- gsub("^9606\\.", "", tmp$b)
-
-# how are the scores distributed?
-
-minScore <- 0
-maxScore <- 1000
-# we define breaks to lie just below the next full number
-hist(tmp$score[(tmp$score >= minScore) & (tmp$score <= maxScore)],
-     xlim = c(minScore, maxScore),
-     breaks = c((seq(minScore, (maxScore - 25), by = 25) - 0.1), maxScore),
-     main = "STRING edge scores",
-     col = colorRampPalette(c("#FFFFFF","#8888A6","#FF6655"), bias = 2)(40),
-     xlab = "scores: (p * 1,000)",
-     ylab = "p",
-     xaxt = "n")
-axis(1, at = seq(minScore, maxScore, by = 100))
-abline(v = 900, lwd = 0.5)
-
-```
-
-![](./inst/img/score_hist_1.svg?sanitize=true "STRING score distribution")
-
-We know that "channel 7 - databases" interactions are arbitrarily scored as _p_ = 0.9. This is clearly reflected in the scores distribution.
-
-```R
-# Zoom in
-
-minScore <- 860
-maxScore <- 1000
-hist(tmp$score[(tmp$score >= minScore) & (tmp$score <= maxScore)],
-     xlim = c(minScore, maxScore),
-     breaks = c((seq(minScore, (maxScore - 4), by = 4) - 0.1), maxScore),
-     main = "STRING edge scores",
-     col = colorRampPalette(c("#FFFFFF","#8888A6","#FF6655"), bias = 1.2)(35),
-     xlab = "scores: (p * 1,000)",
-     ylab = "p",
-     xaxt = "n")
-axis(1, at = seq(minScore, maxScore, by = 10))
-abline(v = 900, lwd = 0.5)
-
-```
-
-![](./inst/img/score_hist_2.svg?sanitize=true "STRING score distribution (detail)")
-
-
-```R
-
-# Focus on the cutoff of scores at p == 0.9
-sum(tmp$score >= 880 & tmp$score < 890) # 5,706
-sum(tmp$score >= 890 & tmp$score < 900) # 5,666
-sum(tmp$score >= 900 & tmp$score < 910) # 315,010
-sum(tmp$score >= 910 & tmp$score < 920) # 83,756
-
-# We shall restrict our dataset to high-confidence edges with p >= 0.9
-
-tmp <- tmp[tmp$score >= 900, ]  # 648,304 rows of high-confidence edges
-
-```
-
-&nbsp;
-
-Are these edges duplicated? I.e. are there (a, b) and (b, a) edges in the dataset? The common way to test for that is to created a composite string of the two elements, sorted. Thus if we have an edge betwween `"this"` and `"that"`, and an edge between `"that"` and `"this"`, these edges both get mapped to a key `"that:this"` - and the duplication is easy to recognize.
-
-&nbsp;
-
-```R
-
-sPaste <- function(x, collapse = ":") {
-  return(paste(sort(x), collapse = collapse))
-}
-tmp$key <- apply(tmp[ , c("a", "b")], 1, sPaste)
-
-length(tmp$key) # 648,304
-length(unique(tmp$key)) # 324,152  ... one half of the edges are duplicates!
-
-# We can remove those edges. And the keys.
-tmp <- tmp[( ! duplicated(tmp$key)), c("a", "b", "score") ]
-```
-
-&nbsp;
-
-Finally we map the ENSP IDs to HGNC symbols. Using our tool, this is a simple assignment:
-
-&nbsp;
-
-```R
-
-tmp$a <- ensp2sym[tmp$a]
-tmp$b <- ensp2sym[tmp$b]
-
-# Validate:
-# how many rows could not be mapped
-any(grepl("ENSP", tmp$a))  # Nope
-any(grepl("ENSP", tmp$b))  # None left here either
-sum(is.na(tmp$a)) # 705
-sum(is.na(tmp$b)) # 3501
-
-# we remove edges in which either one or the other node is NA to
-# create our final data:
-STRINGedges <- tmp[( ! is.na(tmp$a)) & ( ! is.na(tmp$b)), ] # 319,997 edges
-
-# Done.
-# Save result
-save(STRINGedges, file = file.path("..", "data", "STRINGedges.RData"))
-# That's only 1.4 MB actually.
-
-```
-
-&nbsp;
-
-#### 5 Network statistics
-
-Simple characterization of network statistics:
-
-&nbsp;
-
-```R
-
-# number of nodes
-(N <- length(unique(c(STRINGedges$a, STRINGedges$b))))  # 12,196 genes
-
-# coverage of human protein genes
-N * 100 / sum(HGNC$type == "protein")  # 63.4 %
-
-# number of edges
-nrow(STRINGedges)   # 319,997
-
-# any self-edges?
-any(STRINGedges$a == STRINGedges$b) # yes
-which(STRINGedges$a == STRINGedges$b)
-STRINGedges[which(STRINGedges$a == STRINGedges$b), ]
-#        a     b   score     # just one
-#  1 ZBED6 ZBED6     940
-
-
-# average number of interactions
-nrow(STRINGedges) / N  # 26.2  ... that seems a lot - how is this distributed?
-
-# degree distribution
-deg <- table(c(STRINGedges$a, STRINGedges$b))
-summary(as.numeric(deg))
-
-hist(deg, breaks=50,
-     xlim = c(0, 1400),
-     col = "#3fafb388",
-     main = "STRING nodes degree distribution",
-     xlab = "degree (undirected graph)",
-     ylab = "Counts")
-rug(deg, col = "#EE5544")
-
-```
-
-![](./inst/img/STRING_degrees_1.svg?sanitize=true "STRING network degree distribution")
-
-
-## 6 Biological validation: network properties
-
-For more detailed validation, we need to look at network properties 
-
-&nbsp;
-
-```R
-
-sG <- igraph::graph_from_edgelist(matrix(c(STRINGedges$a,
-                                           STRINGedges$b),
-                                         ncol = 2,
-                                         byrow = FALSE),
-                                  directed = FALSE)
-
-# degree distribution
-dg <- igraph::degree(sG)
-
-# is this a scale-free distribution? Plot log(rank) vs. log(frequency)
-freqRank <- table(dg)
-x <- log10(as.numeric(names(freqRank)) + 1)
-y <- log10(as.numeric(freqRank))
-plot(x, y,
-     type = "b",
-     pch = 21, bg = "#A5F5CC",
-     xlab = "log(Rank)", ylab = "log(frequency)",
-     main = "Zipf's law governing the STRING network")
-
-# Regression line
-ab <- lm(y ~ x)
-abline(ab, col = "#FF000077", lwd = 0.7)
-
-```
-
-![](./inst/img/STRING_Zipf_plot_1.svg?sanitize=true "STRING score distribution (detail)")
-
-
-```R
-# What are the ten highest degree nodes?
-x <- sort(dg, decreasing = TRUE)[1:10]
-cat(sprintf("\t%d:\t%s\t(%s)\n", x, names(x), HGNC[names(x), "name"]))
-# 1343:	RPS27A	(ribosomal protein S27a)
-# 1339:	UBA52	(ubiquitin A-52 residue ribosomal protein fusion product 1)
-# 1128:	UBC	(ubiquitin C)
-# 1124:	UBB	(ubiquitin B)
-# 918:	GNB1	(G protein subunit beta 1)
-# 894:	GNGT1	(G protein subunit gamma transducin 1)
-# 562:	APP	(amyloid beta precursor protein)
-# 550:	CDC5L	(cell division cycle 5 like)
-# 530:	GNG2	(G protein subunit gamma 2)
-# 526:	RBX1	(ring-box 1)
-
-
-```
-
-&nbsp;
-
-## 7 Annotation of the example gene set
-
-To conclude, we annotate the example gene set, validate the annotation, and store the data in an edge-list format.
-
-&nbsp;
-
-```R
-
-# The specification of the sample set is copy-paste from the 
-# BCB420 resources project.
-
-xSet <- c("AMBRA1", "ATG14", "ATP2A1", "ATP2A2", "ATP2A3", "BECN1", "BECN2",
-          "BIRC6", "BLOC1S1", "BLOC1S2", "BORCS5", "BORCS6", "BORCS7",
-          "BORCS8", "CACNA1A", "CALCOCO2", "CTTN", "DCTN1", "EPG5", "GABARAP",
-          "GABARAPL1", "GABARAPL2", "HDAC6", "HSPB8", "INPP5E", "IRGM",
-          "KXD1", "LAMP1", "LAMP2", "LAMP3", "LAMP5", "MAP1LC3A", "MAP1LC3B",
-          "MAP1LC3C", "MGRN1", "MYO1C", "MYO6", "NAPA", "NSF", "OPTN",
-          "OSBPL1A", "PI4K2A", "PIK3C3", "PLEKHM1", "PSEN1", "RAB20", "RAB21",
-          "RAB29", "RAB34", "RAB39A", "RAB7A", "RAB7B", "RPTOR", "RUBCN",
-          "RUBCNL", "SNAP29", "SNAP47", "SNAPIN", "SPG11", "STX17", "STX6",
-          "SYT7", "TARDBP", "TFEB", "TGM2", "TIFA", "TMEM175", "TOM1",
-          "TPCN1", "TPCN2", "TPPP", "TXNIP", "UVRAG", "VAMP3", "VAMP7",
-          "VAMP8", "VAPA", "VPS11", "VPS16", "VPS18", "VPS33A", "VPS39",
-          "VPS41", "VTI1B", "YKT6")
-
-# which example genes are not among the known nodes?
-x <- which( ! (xSet %in% c(STRINGedges$a, STRINGedges$b)))
-cat(sprintf("\t%s\t(%s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"]))
-
-# BECN2	(beclin 2)
-# EPG5	(ectopic P-granules autophagy protein 5 homolog)
-# LAMP3	(lysosomal associated membrane protein 3)
-# LAMP5	(lysosomal associated membrane protein family member 5)
-# PLEKHM1	(pleckstrin homology and RUN domain containing M1)
-# RUBCNL	(rubicon like autophagy enhancer)
-# TIFA	(TRAF interacting protein with forkhead associated domain)
-# TMEM175	(transmembrane protein 175)
-# TPCN1	(two pore segment channel 1)
-# TPCN2	(two pore segment channel 2)
-
-# That make sense - generally fewer interactions have been recorded for
-# membrane proteins.
-
-
-# For our annotation, we select edges for which both nodes are part of the
-# example set:
-sel <- (STRINGedges$a %in% xSet) & (STRINGedges$b %in% xSet)
-xSetEdges <- STRINGedges[sel, c("a", "b")]
-# Statistics:
-nrow(xSetEdges)   # 206
-
-# Save the annotated set
-
-writeLines(c("a\tb",
-             sprintf("%s\t%s", xSetEdges$a, xSetEdges$b)),
-           con = "xSetEdges.tsv")
-
-# The data set can be read back in again (in an RStudio session) with
-myXset <- read.delim(file.path("inst", "extdata", "xSetEdges.tsv"),
-                     stringsAsFactors = FALSE)
-
-# From an installed package, the command would be:
-myXset <- read.delim(system.file("extdata",
-                                  "xSetEdges.tsv",
-                                  package = "BCB420.2019.STRING"),
-                     stringsAsFactors = FALSE)
-
-
-# confirm
-nrow(myXset) # 206
-colnames(myXset) == c("a", "b") # TRUE TRUE
-
-```
-
-&nbsp;
-
-#### 7.1 Biological validation: network properties
-
-Explore some network properties of the exmple gene set.
-
-&nbsp;
-
-```R
-
-# A graph ...
-sXG <- igraph::graph_from_edgelist(matrix(c(xSetEdges$a,
-                                            xSetEdges$b),
-                                          ncol = 2,
-                                          byrow = FALSE),
-                                   directed = FALSE)
-
-# degree distribution
-dg <- igraph::degree(sXG)
-hist(dg, col="#A5CCF5",
-     main = "Node degrees of example gene network",
-     xlab = "Degree", ylab = "Counts")
-
-# scale free? log(rank) vs. log(frequency)
-freqRank <- table(dg)
-x <- log10(as.numeric(names(freqRank)) + 1)
-y <- log10(as.numeric(freqRank))
-plot(x, y,
-     type = "b",
-     pch = 21, bg = "#A5CCF5",
-     xlab = "log(Rank)", ylab = "log(frequency)",
-     main = "Zipf's law governing the example gene network")
-
-# Regression line
-ab <- lm(y ~ x)
-abline(ab, col = "#FF000077", lwd = 0.7)
-
-```
-
-![](./inst/img/xGenes_Zipf_plot_1.svg?sanitize=true "xGenes degree distribution (log(#)/log(f))")
-
-
-```R
-
-# What are the ten highest degree nodes?
-x <- sort(dg, decreasing = TRUE)[1:10]
-cat(sprintf("\t%d:\t%s\t(%s)\n", x, names(x), HGNC[names(x), "name"]))
-
-# 15:	VAMP8	(vesicle associated membrane protein 8)
-# 15:	RAB7A	(RAB7A, member RAS oncogene family)
-# 12:	PIK3C3	(phosphatidylinositol 3-kinase catalytic subunit type 3)
-# 12:	GABARAP	(GABA type A receptor-associated protein)
-# 12:	SNAP29	(synaptosome associated protein 29)
-# 12:	STX17	(syntaxin 17)
-# 11:	GABARAPL2	(GABA type A receptor associated protein like 2)
-# 11:	BECN1	(beclin 1)
-# 11:	GABARAPL1	(GABA type A receptor associated protein like 1)
-# 10:	UVRAG	(UV radiation resistance associated)
-
-
-# Plot the network
-oPar <- par(mar= rep(0,4)) # Turn margins off
-set.seed(112358)
-plot(sXG,
-     layout = igraph::layout_with_fr(sXG),
-     vertex.color=heat.colors(max(igraph::degree(sXG)+1))[igraph::degree(sXG)+1],
-     vertex.size = 1.5 + (1.2 * igraph::degree(sXG)),
-     vertex.label.cex = 0.2 + (0.025 * igraph::degree(sXG)),
-     edge.width = 2,
-     vertex.label = igraph::V(sXG)$name,
-     vertex.label.family = "sans",
-     vertex.label.cex = 0.9)
-set.seed(NULL)
-par(oPar)
-
-# we see several cliques (or near-cliques), possibly indicative of
-# physical complexes.
-
-```
-
-![](./inst/img/xGenes_Network_1.svg?sanitize=true "xGenes functional interaction network")
-
-
-&nbsp;
-
-## 8 References
-
-&nbsp;
-
-Example code for biomaRt was taken taken from `BIN-PPI-Analysis.R` and example code for work with igraph was taken from `FND-MAT-Graphs_and_networks.R`, both in the [ABC-Units project](https://github.com/hyginn/ABC-units) (Steipe, 2016-1019). A preliminary version of a STRING import script was written as [starter code for the 2018 BCB BioHacks Hackathon](https://github.com/hyginn/ABC-units) at the UNiversity of Toronto (Steipe, 2018) - this script draws on the former.
-
-&nbsp;
-
-* Szklarczyk, D., Gable, A. L., Lyon, D., Junge, A., Wyder, S., Huerta-Cepas, J., Simonovic, M., Doncheva, N. T., Morris, J. H., Bork, P., Jensen, L. J., & von Mering, C. (2019). STRING v11: protein-protein association networks with increased coverage, supporting functional discovery in genome-wide experimental datasets. [_Nucleic acids research_, D1, D607-D613](https://academic.oup.com/nar/article/47/D1/D607/5198476).
-
-* Huang, J. K., Carlin, D. E., Yu, M. K., Zhang, W., Kreisberg, J. F., Tamayo, P., & Ideker, T. (2018). Systematic Evaluation of Molecular Networks for Discovery of Disease Genes. _Cell systems_, 4, 484-495.e5.
-
-&nbsp;
-
-## 9 Acknowledgements
-
-Thanks to Simon Kågedal's very useful [PubMed to APA reference tool](http://helgo.net/simon/pubmed/).
-
-User `Potherca` [posted on Stack](https://stackoverflow.com/questions/13808020/include-an-svg-hosted-on-github-in-markdown) how to use the parameter `?sanitize=true` to display `.svg` images in github markdown.
-
-&nbsp;
-
-&nbsp;
-
-<!-- [END] -->
