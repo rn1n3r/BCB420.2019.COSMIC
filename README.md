@@ -18,10 +18,10 @@ This package describes the pipeline to download cancer somatic mutation from the
 #### In this project ...
 
 ```text
- --BCB420.2019.STRING/
+ --BCB420.2019.COSMIC/
    |__.gitignore
    |__.Rbuildignore
-   |__BCB420.2019.STRING.Rproj
+   |__BCB420.2019.COSMIC.Rproj
    |__DESCRIPTION
    |__dev/
       |__rptTwee.R
@@ -258,7 +258,7 @@ head(cosmicData$`Gene name`[is.na(cosmicData$`HGNC ID`)])
 
 
 
-###### 4.2.3 Using the gene name as the symbol where appropriate
+#### 4.3 Using the gene name as the symbol where appropriate
 
 To do this, first we collect the gene names of the entries with missing symbols (<code>missingNames</code>). From above, we can see that some gene names are HGNC symbols, and some of them also have an Ensemble transcript ID attached to it. We first strip the transcript IDs, and then check to see if the name matches the symbols in the HGNC data we imported. Then, we use the indices of the matches to add onto the <code>HGNCsym</code> column of the COSMIC data.
 
@@ -287,7 +287,7 @@ head(cosmicData$`Gene name`[is.na(cosmicData$HGNCsym)])
 ```
 &nbsp;
 
-###### 4.2.4 Using biomaRt to map Ensembl gene IDs to HGNC symbols
+#### 4.4 Using biomaRt to map Ensembl gene IDs to HGNC symbols
 
 &nbsp;
 
