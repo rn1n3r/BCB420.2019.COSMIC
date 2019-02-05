@@ -2,7 +2,7 @@
 
 
 
-# BCB420.2019.COSMIC`
+# BCB420.2019.COSMIC
 
 #### (COSMIC data annotation of human genes)
 
@@ -16,34 +16,37 @@
 
 ## 1 About this package:
 
-This package describes the pipeline to download cancer somatic mutation from the [COSMIC database](https://cancer.sanger.ac.uk/cosmic), how to ensure the mutation entries have a proper HGNC symbol (where applicable), and calculation of basic statistics. This package will also provide an annotation of the example gene set (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)), which is based on the phagosome/lysosome fusion system as reviewed by [Corona & Jackson (2018)](https://www.sciencedirect.com/science/article/pii/S0962892418301223).
+This package describes the pipeline to download cancer somatic mutation from the [COSMIC database](https://cancer.sanger.ac.uk/cosmic), how to ensure the mutation entries have a proper HGNC symbol (where applicable), and calculation of basic statistics. This package will also provide an annotation of the example gene set (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)), which is based on the phagosome/lysosome fusion system as reviewed by [(Corona & Jackson, 2018)](<https://doi.org/10.1016/j.tcb.2018.07.001>).
 
 
 #### In this project ...
 
 ```text
- --BCB420.2019.COSMIC/
+--BCB420.2019.COSMIC/
    |__.gitignore
    |__.Rbuildignore
+   |__.Rhistory
    |__BCB420.2019.COSMIC.Rproj
    |__DESCRIPTION
    |__dev/
       |__rptTwee.R
-      |__toBrowser.R               # display .md files in your browser
+      |__toBrowser.R
    |__inst/
       |__extdata/
-         |__ensp2sym.RData         # ENSP ID to HGNC symbol mapping tool
-         |__xSetEdges.tsv          # annotated example edges
+         |__xSetCosmic.tsv     # Annotated data of example gene set
       |__img/
-         |__[...]                  # image sources for .md document
+         |__cosmicCount.svg    # Figure images
+         |__cosmicSites.svg
+         |__exampleCount.svg
+         |__exampleSites.svg
+      |__import.R
       |__scripts/
-         |__recoverIDs.R           # utility to use biomaRt for ID mapping
    |__LICENSE
+   |__man/
    |__NAMESPACE
    |__R/
       |__zzz.R
-   |__README.md                    # this file
-
+   |__README.md
 ```
 
 &nbsp;
@@ -127,8 +130,6 @@ if (! requireNamespace("biomaRt", quietly = TRUE)) {
   BiocManager::install("biomaRt")
 }
 ```
-
-
 
 &nbsp;
 
@@ -367,11 +368,11 @@ barplot(counts[1:10], main="Count of HGNC Symbol in COSMIC")
 
 ![](inst/img/cosmicCount.svg)
 
-This makes sense, as TP53 (tumor suppressor protein 53) is an important [tumor suppressor protein](https://ghr.nlm.nih.gov/gene/TP53). TTN, while not usually associated with tumor (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4515826/), encodes a very large protein (>30,000 amino acids), which makes it susceptibly to random DNA repair error, leading to residue alteration (Tan, Bao, and Zhou, 2015).
+This makes sense, as TP53 (tumor suppressor protein 53) is an important [tumor suppressor protein](https://ghr.nlm.nih.gov/gene/TP53). TTN, while not usually associated with tumor (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4515826/), encodes a very large protein (>30,000 amino acids), which makes it susceptibly to random DNA repair error, leading to residue alteration (Tan, Bao, & Zhou, 2015).
 
 ![](/inst/img/cosmicSites.svg)
 
-## 6 6 Annotation of Example Data Set
+## 6 Annotation of Example Data Set
 
 Using the data imported and validated above, we will annotate the example gene set to be used in BCB420 (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)). This is based on the phagosome/lysosome fusion system as reviewed by [Corona & Jackson (2018)](https://www.sciencedirect.com/science/article/pii/S0962892418301223).
 
@@ -431,3 +432,11 @@ barplot(counts[1:10])
 ![exampleSites](/inst/img/exampleSites.svg)
 
 The trends for the primary sites follow the data from the entire COSMIC data, especially the large intestine, skin, and lung mutations.
+
+
+
+## 7 References
+
+* Corona, A. K., & Jackson, W. T. (2018). Finding the Middle Ground for Autophagic Fusion Requirements. *Trends in Cell Biology, 28*(11), 869-881. [doi:10.1016/j.tcb.2018.07.001](<https://doi.org/10.1016/j.tcb.2018.07.001>)
+* Tan, H., Bao, J., & Zhou, X. (2015). Genome-wide mutational spectra analysis reveals significant cancer-specific heterogeneity. *Scientific reports*, *5*, [12566. doi:10.1038/srep12566](https://doi.org/10.1038%2Fsrep12566)
+
