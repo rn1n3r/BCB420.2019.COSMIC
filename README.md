@@ -57,23 +57,7 @@ All COSMIC data is free for academic users, and requires an email address from a
 
 #### 2.1 Data semantics
 
-Association evidence in STRING is compiled in seven "channels" (Szclarczyk _et al._ 2019):
 
-1. **Genomic context I**: neighbourhood
-2. **Genomic context II**: fusion
-3. **Genomic context III**: phylogenetic profiles
-4. **Co-expression**: correlations across a large number of mRNA and proteome data sets
-5. **Text-mining**: statistical co-citation analysis across PubMed and OMIM.
-6. **Experiments**: these are the _classical_ protein-protein interactions. These scores are derived from data imported from all [IMEX consortium databases](https://www.imexconsortium.org/)
-7. **Curated pathway- and protein-complex databases**: pathways from KEGG, Reactome, BioCyc and the GO consortium. All associations derived from this channel are scored with _p_ = 0.9.
-
-For each "channel", STRING distinguishes evidence that is provided from the organism itself, and annotation transfer by homology.
-
-Finally, a composite score is computed as the sum of the probabilities from each channel, subtracting a "prior" (that indicates the probability of a false positive) and applying a homology correction to co-occurrence and text-mining scores. Source code for this operation is available [here (python)](http://string-gamma.org/download/combine_subscores.py).
-
-In summary: STRING interactions represent the probability of "information flow" between two nodes, since: "biologically meaningful interfaces have evolved to allow the flow of information through the cell, and they are ultimately essential for implementing a functional system."(Szclarczyk _et al._ 2019)
-
-This approach integrates biological data on the largest possible scale, and this is successful: a recent benchmark study (Huang _et al._ 2018) has shown STRING to have the highest network recovery scores of disease-associated gene sets from the DisGeNET database, when compared with 20 other gene network resources. 
 
 &nbsp;
 
@@ -289,8 +273,6 @@ head(cosmicData$`Gene name`[is.na(cosmicData$HGNCsym)])
 
 #### 4.4 Using biomaRt to map Ensembl gene IDs to HGNC symbols
 
-&nbsp;
-
 ```R
 # Update names with missing symbols (could not directly use name as symbol)
 missingNames <- missingNames[is.na(hgncIndex)]
@@ -313,21 +295,40 @@ ensemblMap <- ensemblMap[hgnc_symbol != ""]
 # Verify that the returned symbols are HGNC approved symbols
 sum(!(ensemblMap$hgnc_symbol %in% hgnc$`Approved symbol`)) # 0
 
-
 ```
 
 
 
 #### 4.5 Final validation
 
-Validation and statistics of our mapping tool:
-
 ```R
-
-
-
+# Check current coverage
+sum(!is.na(cosmicData$HGNCsym)) / length(cosmicData$HGNCsym) # 0.9830611
+sum(is.na(cosmicData$HGNCsym)) # 111475 - 6264 less than before
 ```
 
-&nbsp;
+So there are 111,475 COSMIC mutation entries that could not be mapped to a HGNC symbol. This may be because
 
+1. The mutation occurred at a contig (set of overlapping DNA segments), so it could not be easily mapped to a single gene.
+2. The mutation occurred somewhere in the DNA that has not been well characterized (no known function, etc).
+3. The gene name given is a previous name or synonym. In this case, it is possible to go through the HGNC data and search the previous name/synonym columns, but the current implementation of this (presented below) is too slow:
+
+```R
+foundNames = vector(mode="integer", length=length(missingNames))
+i <- 0
+for (name in missingNames) {
+  i <- i+1
+  print(i)
+  index <- grep(paste(name, "($|,)", sep=""), hgnc$`Previous symbols`)
+  if (length(index) >= 1) {
+    foundNames[which(name == missingNames)] <- index[1] # Just take the first match for now
+  }
+  else {
+    index <- grep(paste(name, "($|,)", sep=""), hgnc$`Synonyms`)
+    if (length(index) == 1) {
+      foundNames[which(name == missingNames)] <- index
+    }
+  }
+}
+```
 

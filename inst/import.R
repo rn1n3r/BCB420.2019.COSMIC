@@ -136,9 +136,9 @@ print("Using biomaRt to look for remaining missing entries by using the Ensembl 
 ensgIndex <- grepl("ENSG", missingNames)
 ensembl <- missingNames[ensgIndex]
 myMart <- biomaRt::useMart("ensembl", dataset="hsapiens_gene_ensembl")
-tmp <- biomaRt::getBM(filters="ensembl_gene_id", attributes = c("ensembl_gene_id", "hgnc_symbol"), values = unique(ensembl), mart=myMart)
+ensemblMap <- biomaRt::getBM(filters="ensembl_gene_id", attributes = c("ensembl_gene_id", "hgnc_symbol"), values = unique(ensembl), mart=myMart)
 
-ensemblMap <- data.table::as.data.table(tmp)
+ensemblMap <- data.table::as.data.table(ensemblMap)
 data.table::setkey(ensemblMap, "ensembl_gene_id")
 ensemblMap <- ensemblMap[hgnc_symbol != ""]
 
