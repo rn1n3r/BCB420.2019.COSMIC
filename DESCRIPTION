@@ -1,7 +1,7 @@
 Package: BCB420.2019.COSMIC
 Type: Package
 Title: COSMIC human gene annotatation
-Version: 1.0.0
+Version: 0.1.0
 Date: 2019-02-05
 Authors@R: c(
     person("Edward", "Ho", email = "emc.ho@mail.utoronto.ca", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1360-0086")),
