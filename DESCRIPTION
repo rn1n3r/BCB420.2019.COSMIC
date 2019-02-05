@@ -1,10 +1,11 @@
-Package: BCB420.2019.STRING
+Package: BCB420.2019.COSMIC
 Type: Package
-Title: STRING data annotatation of human genes
+Title: COSMIC human gene annotatation
 Version: 1.0.0
-Date: 2019-01-24
+Date: 2019-02-05
 Authors@R: c(
-    person("Boris", "Steipe", email = "boris.steipe@utoronto.ca", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1134-6758"))
+    person("Edward", "Ho", email = "emc.ho@mail.utoronto.ca", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1360-0086")),
+    person("Boris", "Steipe", email = "boris.steipe@utoronto.ca", role = c("ctb"), comment = c(ORCID = "0000-0002-1134-6758"))
     )
 Description: Describes the workflow for annotating human genes with
              high-confidence STRING data and contains an annotated example
@@ -16,5 +17,5 @@ LazyData: true
 Suggests: readr,
           BiocManager,
           biomaRt,
-          igraph
+          data.table
 RoxygenNote: 6.1.1
