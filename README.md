@@ -350,9 +350,11 @@ save(cosmicData, file=file.path("inst", "extdata", "cosmicData.RData"))
 
 ## 5 Statistics
 
+![](inst/img/cosmicCount.svg)
 
+![](/inst/img/cosmicSites.svg)
 
-## 6 Annotation of Example Data Set
+## 6 6 Annotation of Example Data Set
 
 Using the data imported and validated above, we will annotate the example gene set to be used in BCB420 (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)). This is based on the phagosome/lysosome fusion system as reviewed by [Corona & Jackson (2018)](https://www.sciencedirect.com/science/article/pii/S0962892418301223).
 
@@ -382,5 +384,32 @@ hgnc$`Approved name`[match(notInCosmic, hgnc$`Approved symbol`)]
 
 # Get the COSMIC data for all the genes in the example set
 geneSetData <- cosmicData[cosmicData$HGNCsym %in% genes,]
+
+# Can read in the exported data like so:
+geneSetData <- readr::read_tsv(system.file("extdata", "xSetCosmic.tsv"), col_names=TRUE)
+geneSetData <- readr::read_tsv(file.path("inst","extdata", "xSetCosmic.tsv"), col_names=TRUE)
+
 ```
+
+Look at which genes showed up most often:
+
+```R
+# Get the number of times each gene symbol appears in geneSetData
+counts <- table(geneSetData$HGNCsym)
+counts <- sort(counts, decreasing=TRUE)
+barplot(counts[1:10])
+```
+
+![](inst/img/exampleCount.svg)
+
+We repeat this for the primary sites in the example gene sets:
+
+```R
+# Get the number of times each gene symbol appears in geneSetData
+counts <- table(geneSetData$HGNCsym)
+counts <- sort(counts, decreasing=TRUE)
+barplot(counts[1:10])
+```
+
+![exampleSites](/inst/img/exampleSites.svg)
 
