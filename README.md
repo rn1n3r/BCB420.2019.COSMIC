@@ -305,6 +305,12 @@ sum(!(ensemblMap$hgnc_symbol %in% hgnc$`Approved symbol`)) # 0
 # Check current coverage
 sum(!is.na(cosmicData$HGNCsym)) / length(cosmicData$HGNCsym) # 0.9830611
 sum(is.na(cosmicData$HGNCsym)) # 111475 - 6264 less than before
+
+# How many unique HGNC symbols were found?
+length(unique(cosmicData$HGNCsym)) # 19,033, but 19,032 after we account for NA values
+
+# Are all these symbols approved symbols in the HGNC data?
+sum(unique(cosmicData$HGNCsym) %in% hgnc$`Approved symbol`) # 19,032
 ```
 
 So there are 111,475 COSMIC mutation entries that could not be mapped to a HGNC symbol. This may be because
@@ -330,5 +336,51 @@ for (name in missingNames) {
     }
   }
 }
+```
+
+
+
+Finally, we save the COSMIC data. Since there is no unique identifier for each entry (even the mutation ID is not unique), we will save <code>cosmicData</code> into an RData file for future use. The resulting file is around 400 MB, which is a pretty good compression from the original 1.7 GB.
+
+```R
+save(cosmicData, file=file.path("inst", "extdata", "cosmicData.RData"))
+```
+
+
+
+## 5 Statistics
+
+
+
+## 6 Annotation of Example Data Set
+
+Using the data imported and validated above, we will annotate the example gene set to be used in BCB420 (provided [here](https://github.com/hyginn/BCB420-2019-resources/blob/master/exampleGeneSet.md)). This is based on the phagosome/lysosome fusion system as reviewed by [Corona & Jackson (2018)](https://www.sciencedirect.com/science/article/pii/S0962892418301223).
+
+```R
+# Copy and pasted from BCB420.2019 resources
+genes <- c("AMBRA1", "ATG14", "ATP2A1", "ATP2A2", "ATP2A3", "BECN1", "BECN2",
+          "BIRC6", "BLOC1S1", "BLOC1S2", "BORCS5", "BORCS6", "BORCS7",
+          "BORCS8", "CACNA1A", "CALCOCO2", "CTTN", "DCTN1", "EPG5", "GABARAP",
+          "GABARAPL1", "GABARAPL2", "HDAC6", "HSPB8", "INPP5E", "IRGM",
+          "KXD1", "LAMP1", "LAMP2", "LAMP3", "LAMP5", "MAP1LC3A", "MAP1LC3B",
+          "MAP1LC3C", "MGRN1", "MYO1C", "MYO6", "NAPA", "NSF", "OPTN",
+          "OSBPL1A", "PI4K2A", "PIK3C3", "PLEKHM1", "PSEN1", "RAB20", "RAB21",
+          "RAB29", "RAB34", "RAB39A", "RAB7A", "RAB7B", "RPTOR", "RUBCN",
+          "RUBCNL", "SNAP29", "SNAP47", "SNAPIN", "SPG11", "STX17", "STX6",
+          "SYT7", "TARDBP", "TFEB", "TGM2", "TIFA", "TMEM175", "TOM1",
+          "TPCN1", "TPCN2", "TPPP", "TXNIP", "UVRAG", "VAMP3", "VAMP7",
+          "VAMP8", "VAPA", "VPS11", "VPS16", "VPS18", "VPS33A", "VPS39",
+          "VPS41", "VTI1B", "YKT6")
+
+# See which genes are not in COSMIC
+notInCosmic <- genes[!(genes %in% cosmicData$HGNCsym)]
+hgnc$`Approved name`[match(notInCosmic, hgnc$`Approved symbol`)]
+
+# [1] "beclin 2"                                       
+# [2] "RAB7B, member RAS oncogene family"              
+# [3] "VPS11 core subunit of CORVET and HOPS complexes"
+
+# Get the COSMIC data for all the genes in the example set
+geneSetData <- cosmicData[cosmicData$HGNCsym %in% genes,]
 ```
 
