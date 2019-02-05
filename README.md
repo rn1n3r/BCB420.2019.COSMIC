@@ -39,13 +39,14 @@ This package describes the pipeline to download cancer somatic mutation from the
          |__cosmicSites.svg
          |__exampleCount.svg
          |__exampleSites.svg
-      |__import.R
       |__scripts/
+         |__annotateExample.R
    |__LICENSE
    |__man/
    |__NAMESPACE
    |__R/
       |__zzz.R
+      |__import.R
    |__README.md
 ```
 
@@ -60,13 +61,6 @@ COSMIC (Catalogue Of Somatic Mutations in Cancer) is an expert-curated collectio
 All COSMIC data is free for academic users, and requires an email address from an academic institution to register and download data. More information can be found [here](https://cancer.sanger.ac.uk/cosmic/license+&cd=1&hl=en&ct=clnk&gl=ca).
 
 
-&nbsp;https://academic.oup.com/nar/article/47/D1/D941/5146192
-
-#### 2.1 Data semantics
-
-
-
-&nbsp;
 
 ## 3 Data download and cleanup
 
