@@ -368,7 +368,7 @@ barplot(counts[1:10], main="Count of HGNC Symbol in COSMIC")
 
 ![](inst/img/cosmicCount.svg)
 
-This makes sense, as TP53 (tumor suppressor protein 53) is an important [tumor suppressor protein](https://ghr.nlm.nih.gov/gene/TP53). TTN, while not usually associated with tumor (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4515826/), encodes a very large protein (>30,000 amino acids), which makes it susceptibly to random DNA repair error, leading to residue alteration (Tan, Bao, & Zhou, 2015).
+This makes sense, as TP53 (tumor suppressor protein 53) is an important [tumor suppressor protein](https://ghr.nlm.nih.gov/gene/TP53). TTN, while not usually associated with tumors, encodes a very large protein (>30,000 amino acids), which makes it susceptibly to random DNA repair error, leading to residue alteration [(Tan, Bao, & Zhou, 2015)](https://doi.org/10.1038%2Fsrep12566).
 
 ![](/inst/img/cosmicSites.svg)
 
@@ -440,3 +440,8 @@ The trends for the primary sites follow the data from the entire COSMIC data, es
 * Corona, A. K., & Jackson, W. T. (2018). Finding the Middle Ground for Autophagic Fusion Requirements. *Trends in Cell Biology, 28*(11), 869-881. [doi:10.1016/j.tcb.2018.07.001](<https://doi.org/10.1016/j.tcb.2018.07.001>)
 * Tan, H., Bao, J., & Zhou, X. (2015). Genome-wide mutational spectra analysis reveals significant cancer-specific heterogeneity. *Scientific reports*, *5*, [12566. doi:10.1038/srep12566](https://doi.org/10.1038%2Fsrep12566)
 
+
+
+## 8 Acknowledgments
+
+Thanks to Dr. Boris Steipe for the useful [format and template](https://github.com/hyginn/rpt) of the R project and package, as well as specifically for this README file, which was inspired by his [STRING annotation package](https://github.com/hyginn/BCB420.2019.STRING).
