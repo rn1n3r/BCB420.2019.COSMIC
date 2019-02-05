@@ -1,4 +1,8 @@
-# `BCB420.2019.COSMIC`
+
+
+
+
+# BCB420.2019.COSMIC`
 
 #### (COSMIC data annotation of human genes)
 
@@ -350,7 +354,20 @@ save(cosmicData, file=file.path("inst", "extdata", "cosmicData.RData"))
 
 ## 5 Statistics
 
+Let's look at which genes show up most often, and where the primary affected site of the cancer is in the COSMIC data.
+
+```R
+# Get the number of times each gene symbol appears in geneSetData
+counts <- table(cosmicData$HGNCsym)
+counts <- sort(counts, decreasing=TRUE)
+barplot(counts[1:10], main="Count of HGNC Symbol in COSMIC")
+```
+
+
+
 ![](inst/img/cosmicCount.svg)
+
+This makes sense, as TP53 (tumor suppressor protein 53) is an important [tumor suppressor protein](https://ghr.nlm.nih.gov/gene/TP53). TTN, while not usually associated with tumor (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4515826/), encodes a very large protein (>30,000 amino acids), which makes it susceptibly to random DNA repair error, leading to residue alteration (Tan, Bao, and Zhou, 2015).
 
 ![](/inst/img/cosmicSites.svg)
 
@@ -413,3 +430,4 @@ barplot(counts[1:10])
 
 ![exampleSites](/inst/img/exampleSites.svg)
 
+The trends for the primary sites follow the data from the entire COSMIC data, especially the large intestine, skin, and lung mutations.
