@@ -14,7 +14,7 @@ Description: Describes the workflow for annotating human genes with
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Suggests: readr,
+Imports: readr,
           BiocManager,
           biomaRt,
           data.table

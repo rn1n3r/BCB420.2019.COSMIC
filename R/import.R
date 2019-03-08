@@ -5,7 +5,7 @@
 #'@export importCosmic
 importCosmic <- function(){
 
-
+  library(readr)
   col_spec <- cols(
     `Gene name` = col_character(),
     `Accession Number` = col_character(),
